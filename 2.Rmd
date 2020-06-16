@@ -1,0 +1,177 @@
+---
+title: "Statistical_inference"
+author: "Reza Mofidi"
+date: "15/06/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Peer Graded Assignment: Statistical Inference Course
+
+## Introduction
+This assignment is divided into two parts. Part one is a simulation exercise. Part 2 involves basic inferential data analysis. I will address each of these projects separately. 
+
+## Simulation Exercise
+
+In this project I investigate the exponential distribution in R and compare it with the Central Limit Theorem. The exponential distribution is the probability distribution of the time between events in a Poisson point process, i.e., a process in which events occur continuously and independently at a constant average rate Advanced Math and Statistics.
+
+### Exponential Distribution
+
+The exponential distribution is a continuous distribution that is commonly used to measure the expected time for an event to occur (1). For example, in physics it is often used to measure radioactive decay, in engineering it can be used to measure the time associated with receiving a defective part on an assembly line, and in finance it is used to measure the likelihood of the next default for a portfolio of financial products (1). The exponential distribution can be simulated in R with rexp(n, lambda) where lambda is the rate parameter. The mean of exponential distribution is 1/lambda and the standard deviation is also 1/lambda. Set lambda = 0.2 for all of the simulations. I aim to investigate the distribution of averages of 40 exponentials. Note that As per instructions I have performed a thousand simulations.
+
+
+Show the sample mean and compare it to the theoretical mean of the distribution.
+Show how variable the sample is (via variance) and compare it to the theoretical variance of the distribution. Show that the distribution is approximately normal.
+In point 3, focus on the difference between the distribution of a large collection of random exponentials and the distribution of a large collection of averages of 40 exponentials.
+
+```{r library}
+library(dbplyr)
+library(ggplot2)
+if(!file.exists("~/data")){dir.create("~/data")}
+```
+
+The first part of this project is completed in the following steps:
+
+### 1- Show the sample mean and compare it to the theoretical mean of the distribution.
+```{r sim}
+n<- 40
+simulations<- 1000
+lambda<- 0.2
+sample_mean<- as.numeric()
+for(i in 1:simulations){
+  sample_mean <- c(sample_mean, mean(rexp(n, lambda)))
+}
+mean(sample_mean)
+```
+
+A you can see the sample mean is close to the value 5 it varies slightly every time the simultion is run. 
+
+### 2- Show how variable the sample is (via variance) and compare it to the theoretical variance of the distribution.
+
+```{r variance}
+variance<- var(sample_mean)
+variance
+```
+
+The variance value is close to 0.6 
+
+### 3- Show that the distribution is approximately normal.
+
+A picture (or 2) is worth a thousand words therefore I plan to illustrate this in grpaphical form. The following plots illustrate how closely the sample means are similar to a normal gaussian distribution:
+
+```{r pressure, echo=FALSE}
+hist(sample_mean, breaks=n, col = "red", xlab="mean", main= "distribution of sample means")
+qqnorm(sample_mean)
+qqline(sample_mean)
+```
+
+As the histogram above and the plot of sample quantiles versus theoretical quantiles indicate the sample means obtained from a simulated exponential distribution of a relatively small sample size (n=40) closely approximate a normal distribution. 
+
+### Reference
+
+1- Kissell, R. L., & Poserina, J. (2017). Optimal Sports Math, Statistics, and Fantasy. Academic Press.
+
+
+## Basic Inferential Data Analysis
+
+In the second portion of the project, we're going to analyze the ToothGrowth data in the R datasets package.This database is one of the standard datasets available on R. It is standard 60 observation dataset of 3 variables. The dataset examines the length of odontoblasts in relation to the dose of vitamin C administeredin 2 methods OJ and VC. the doses of vitamin C are o.5, 1 and 2 mgs.
+
+```{r}
+library(dplyr)
+data(ToothGrowth)
+summary(ToothGrowth)
+```
+
+Next we summarize the dataset by dose and supplement. This returns the data classfied into 6 rows which are classified by the 2 metods of delivery of vitamin C (OJ and VC) and the 3 different doses (0.5, 1 and 2mgs) the mean Odontoblast length and standard deviation for each group is provided. 
+
+```{r}
+ToothGrowth %>% 
+     group_by(supp,dose) %>%
+    summarize(lenmean=mean(len), lensd=sd(len), count= n())
+``` 
+
+The following box plot illustrates the differences between these groups:
+
+```{r}
+library(ggplot2)
+ToothGrowth$dose <- as.factor(ToothGrowth$dose)
+ggplot(ToothGrowth, aes(x=dose, y=len, color=dose)) +
+  geom_boxplot()
+```
+
+There appears to be a clear dose dependent relationship between the length of odontoblasts and the dose of vitamin C administered (Above). There does not appear to be a similar relationship between the supp vatiable and the  length of the odontoblasts (len). Below:
+
+
+```{r}
+ToothGrowth$supp <- as.factor(ToothGrowth$supp)
+ggplot(ToothGrowth, aes(x=supp, y=len, color=supp)) +
+  geom_boxplot()
+```
+
+Lets examine the above hypotheses:
+
+#### Tooth growth by method of delivery (supp)
+
+```{r}
+t.test(len ~ supp, data = ToothGrowth)$conf.int
+t.test(len ~ supp, data = ToothGrowth)$p.value
+```
+The above data suggests that the differences tooth growth by (supp) or method of vit C delivery does not appear to be statistically significant as the confidence intervals cross 0 and the p value is higher than 0.5.
+
+#### Tooth growth by Vitamin C dose
+
+In order to be able to make this comparison with T test we repeat the comparison between the methods of delivery at the 3 dosage levels:
+
+##### Dosage level 2 mg:
+
+```{r}
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 2,])$conf.int
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 2,])$p.value
+```
+
+##### Dosage level 1 mg:
+
+```{r}
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 1,])$conf.int
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 1,])$p.value
+```
+
+##### Dosage level 0.5 mg:
+
+```{r}
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 0.5,])$conf.int
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 0.5,])$p.value
+```
+
+The differences in tooth growth (len values) between OJ and VC delivery methods are statistically significant for the dosage subgroups 0.5 mgs and 1 mgs but not at 2 mg dosage values. This is illustrated in the following box plot:
+
+```{r}
+ggplot(ToothGrowth, aes(x=dose, y=len, fill=supp)) +
+  geom_boxplot()
+```
+
+#### Examining the correlation between VitC dosage and tooth growth.
+
+A close correlation is observed between len (tooth growth) and dosage of vitamin C (dose).This relationship is illustrated by the following plot as well as Pearson correlation coefficient of 0.83, 95 percent confidence intervals: (0.74-0.90)
+```{r}
+library(ggpubr)
+ggscatter(ToothGrowth, x = "dose", y = "len",  
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Dose/mg", ylab = "Odontoblast length (len)/mm")
+ToothGrowth$dose1<- as.numeric(ToothGrowth$dose)
+correl <- cor.test(ToothGrowth$dose1, ToothGrowth$len, 
+                    method = "pearson")
+correl
+```
+
+### Conclusions
+On the face of it there is not an statistically significant difference in tooth growth based on the method of delivery of Vitamin C (supp). 
+
+It appears that by combining the supp and dose as classifiers it is possible to see that at lower doses of vitamin C (0.5 mg and 1 mg) the method of delivery may be an important variable in tooth growth or len value, but not at the highest dose of 2mgs. 
+
+A close correlation is observed between the dosage of vitamin C (as a continuous variable) and tooth growth as examined by odontoblast length (len). 
+
+This study is limited by the small sample size and the limited amount of data available. There is also no explanation of how data was collected, so the results must be interpreted with caution.
