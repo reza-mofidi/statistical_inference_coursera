@@ -1,0 +1,123 @@
+---
+title: "Statistical_inference"
+author: "Reza Mofidi"
+date: "15/06/2020"
+output:
+  word_document: default
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Peer Graded Assignment: Statistical Inference Course (Part-2)
+
+
+```{r library}
+library(dbplyr)
+library(ggplot2)
+if(!file.exists("~/data")){dir.create("~/data")}
+```
+
+## Basic Inferential Data Analysis
+
+In the second portion of the project, we're going to analyze the ToothGrowth data in the R datasets package.This database is one of the standard datasets available on R. It is standard 60 observation dataset of 3 variables. The dataset examines the length of odontoblasts in relation to the dose of vitamin C administeredin 2 methods OJ and VC. the doses of vitamin C are o.5, 1 and 2 mgs.
+
+```{r}
+library(dplyr)
+data(ToothGrowth)
+summary(ToothGrowth)
+```
+
+Next we summarize the dataset by dose and supplement. This returns the data classfied into 6 rows which are classified by the 2 metods of delivery of vitamin C (OJ and VC) and the 3 different doses (0.5, 1 and 2mgs) the mean Odontoblast length and standard deviation for each group is provided. 
+
+```{r}
+ToothGrowth %>% 
+     group_by(supp,dose) %>%
+    summarize(lenmean=mean(len), lensd=sd(len), count= n())
+``` 
+
+The following box plot illustrates the differences between these groups:
+
+```{r}
+library(ggplot2)
+ToothGrowth$dose <- as.factor(ToothGrowth$dose)
+ggplot(ToothGrowth, aes(x=dose, y=len, color=dose)) +
+  geom_boxplot()
+```
+
+There appears to be a clear dose dependent relationship between the length of odontoblasts and the dose of vitamin C administered (Above). There does not appear to be a similar relationship between the supp vatiable and the  length of the odontoblasts (len). Below:
+
+
+```{r}
+ToothGrowth$supp <- as.factor(ToothGrowth$supp)
+ggplot(ToothGrowth, aes(x=supp, y=len, color=supp)) +
+  geom_boxplot()
+```
+
+Lets examine the above hypotheses:
+
+#### Tooth growth by method of delivery (supp)
+
+```{r}
+t.test(len ~ supp, data = ToothGrowth)$conf.int
+t.test(len ~ supp, data = ToothGrowth)$p.value
+```
+The above data suggests that the differences tooth growth by (supp) or method of vit C delivery does not appear to be statistically significant as the confidence intervals cross 0 and the p value is higher than 0.5.
+
+#### Tooth growth by Vitamin C dose
+
+In order to be able to make this comparison with T test we repeat the comparison between the methods of delivery at the 3 dosage levels:
+
+##### Dosage level 2 mg:
+
+```{r}
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 2,])$conf.int
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 2,])$p.value
+```
+
+##### Dosage level 1 mg:
+
+```{r}
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 1,])$conf.int
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 1,])$p.value
+```
+
+##### Dosage level 0.5 mg:
+
+```{r}
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 0.5,])$conf.int
+t.test(len ~ supp, data =ToothGrowth[ToothGrowth$dose == 0.5,])$p.value
+```
+
+The differences in tooth growth (len values) between OJ and VC delivery methods are statistically significant for the dosage subgroups 0.5 mgs and 1 mgs but not at 2 mg dosage values. This is illustrated in the following box plot:
+
+```{r}
+ggplot(ToothGrowth, aes(x=dose, y=len, fill=supp)) +
+  geom_boxplot()
+```
+
+#### Examining the correlation between VitC dosage and tooth growth.
+
+A close correlation is observed between len (tooth growth) and dosage of vitamin C (dose).This relationship is illustrated by the following plot as well as Pearson correlation coefficient of 0.83, 95 percent confidence intervals: (0.74-0.90)
+```{r}
+library(ggpubr)
+ggscatter(ToothGrowth, x = "dose", y = "len",  
+          add = "reg.line", conf.int = TRUE, 
+          cor.coef = TRUE, cor.method = "pearson",
+          xlab = "Dose/mg", ylab = "Odontoblast length (len)/mm")
+ToothGrowth$dose1<- as.numeric(ToothGrowth$dose)
+correl <- cor.test(ToothGrowth$dose1, ToothGrowth$len, 
+                    method = "pearson")
+correl
+```
+
+### Conclusions
+On the face of it there is not an statistically significant difference in tooth growth based on the method of delivery of Vitamin C (supp). This may be a type II error due to small sample size.  
+
+It appears that by combining the supp and dose as classifiers it is possible to see that at lower doses of vitamin C (0.5 mg and 1 mg) the method of delivery may be an important variable in tooth growth or len value, but not at the highest dose of 2mgs. 
+
+A close correlation is observed between the dosage of vitamin C (as a continuous variable) and tooth growth as examined by odontoblast length (len). 
+
+This study is limited by the small sample size and the limited amount of data available. There is also no explanation of how data was collected, so the results must be interpreted with caution.
